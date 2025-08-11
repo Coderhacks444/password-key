@@ -1,6 +1,7 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import bodyParser from 'body-parser';
+
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
@@ -10,37 +11,61 @@ const PORT = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
+
 // MongoDB connection
-const MONGO_URI = 'mongodb://localhost:27017';
+const MONGO_URI = 'mongodb://localhost:27017/passwordManager';
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB connected successfully'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Define a schema and model for MongoDB
-const DataSchema = new mongoose.Schema({
-  name: String,
-  value: Number
+// Define a schema and model for passwords
+const passwordSchema = new mongoose.Schema({
+  website: String,
+  username: String,
+  password: String
 });
 
-const DataModel = mongoose.model('Data', DataSchema);
+const Password = mongoose.model('Password', passwordSchema);
 
-// API endpoints
-app.get('/data', async (req, res) => {
+// API Endpoints
+app.get('/api/passwords', async (req, res) => {
   try {
-    const data = await DataModel.find();
-    res.status(200).json(data);
+    const passwords = await Password.find();
+    res.status(200).json(passwords);
   } catch (err) {
-    res.status(500).json({ message: 'Error retrieving data', error: err });
+    res.status(500).json({ message: 'Error retrieving passwords', error: err });
   }
 });
 
-app.post('/data', async (req, res) => {
+app.post('/api/passwords', async (req, res) => {
   try {
-    const newData = new DataModel(req.body);
-    await newData.save();
-    res.status(201).json(newData);
+    const newPassword = new Password(req.body);
+    await newPassword.save();
+    res.status(201).json(newPassword);
   } catch (err) {
-    res.status(500).json({ message: 'Error saving data', error: err });
+    res.status(500).json({ message: 'Error saving password', error: err });
+  }
+});
+
+app.put('/api/passwords/:id', async (req, res) => {
+  try {
+    const updatedPassword = await Password.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.status(200).json(updatedPassword);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating password', error: err });
+  }
+});
+
+app.delete('/api/passwords/:id', async (req, res) => {
+  try {
+    await Password.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Password deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting password', error: err });
   }
 });
 
@@ -48,18 +73,3 @@ app.post('/data', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-// Frontend fetch method example
-function fetchData() {
-  fetch('http://localhost:5173/data')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => console.log('Fetched data:', data))
-    .catch(error => console.error('Fetch error:', error));
-}
-
-export default fetchData;
