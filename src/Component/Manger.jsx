@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // Import UUID
+import { v4 as uuidv4 } from 'uuid';
 import { EyeIcon, EyeSlashIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/solid';
-
-const API_URL = 'http://localhost:5000/api/passwords'; // Update with correct endpoint
 
 const PasswordManager = () => {
   const [passwords, setPasswords] = useState([]);
@@ -10,73 +8,23 @@ const PasswordManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Fetch passwords from API
-  const fetchPasswords = async () => {
-    try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      // Show a user-friendly error message
-      alert('Failed to fetch passwords from server. Please make sure the backend is running and accessible at http://localhost:5000.');
-      console.error('Failed to fetch passwords from API:', error);
-      return [];
-    }
-  };
-
-  // Load passwords from API or localStorage
-  const getPasswords = async () => {
-    const apiPasswords = await fetchPasswords();
-    if (apiPasswords && apiPasswords.length > 0) {
-      const passwordsWithIds = apiPasswords.map((entry) =>
-        entry.id ? entry : { ...entry, id: uuidv4() }
-      );
-      setPasswords(passwordsWithIds);
-      localStorage.setItem("passwords", JSON.stringify(passwordsWithIds));
-    } else {
-      // fallback to localStorage if API fails or returns empty
-      const storedPasswords = localStorage.getItem("passwords");
-      if (storedPasswords) {
-        const parsedPasswords = JSON.parse(storedPasswords);
-        setPasswords(parsedPasswords);
-      }
+  // Load passwords from localStorage
+  const getPasswords = () => {
+    const storedPasswords = localStorage.getItem("passwords");
+    if (storedPasswords) {
+      const parsedPasswords = JSON.parse(storedPasswords);
+      setPasswords(parsedPasswords);
     }
   };
   
   useEffect(() => {
     getPasswords();
   }, []);
-  
 
-  // Save or update a single password to API & localStorage
-  const savePasswords = async (updatedPasswords) => {
+  // Save passwords to localStorage
+  const savePasswords = (updatedPasswords) => {
     setPasswords(updatedPasswords);
     localStorage.setItem('passwords', JSON.stringify(updatedPasswords));
-
-    // Find the last changed password
-    const last = updatedPasswords[updatedPasswords.length - 1];
-    try {
-      if (editingId) {
-        // Update existing password
-        await fetch(`${API_URL}/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(last),
-        });
-      } else {
-        // Add new password
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(last),
-        });
-      }
-    } catch (error) {
-      console.error('Error saving password to API:', error);
-    }
   };
 
   // Handle input changes
@@ -111,18 +59,10 @@ const PasswordManager = () => {
   };
 
   // Delete a password
-  const deletePassword = async (id) => {
+  const deletePassword = (id) => {
     if (window.confirm('Are you sure you want to delete this password?')) {
       const updatedPasswords = passwords.filter((entry) => entry.id !== id);
-      setPasswords(updatedPasswords);
-      localStorage.setItem('passwords', JSON.stringify(updatedPasswords));
-      try {
-        await fetch(`${API_URL}/${id}`, {
-          method: 'DELETE',
-        });
-      } catch (error) {
-        console.error('Error deleting password from API:', error);
-      }
+      savePasswords(updatedPasswords);
     }
   };
 
