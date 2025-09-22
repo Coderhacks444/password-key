@@ -13,36 +13,10 @@
     <div id="root"></div>
     
     <script>
-        const { useState, useEffect } = React;
+        const { useState } = React;
         const SECRET_KEY = 'passkey-secret-2024';
 
-        function Navbar() {
-            return React.createElement('nav', {
-                className: 'bg-slate-800 text-white p-4'
-            },
-                React.createElement('div', { className: 'max-w-6xl mx-auto flex justify-between items-center' },
-                    React.createElement('h1', { className: 'text-xl font-bold' }, 'PassKey Manager'),
-                    React.createElement('div', { className: 'space-x-4' },
-                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'Home'),
-                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'About'),
-                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'Contact')
-                    )
-                )
-            );
-        }
-
-        function Footer() {
-            return React.createElement('footer', {
-                className: 'bg-slate-800 text-white p-4 mt-8'
-            },
-                React.createElement('div', { className: 'max-w-6xl mx-auto text-center' },
-                    React.createElement('p', {}, '© 2024 PassKey Manager. All rights reserved.'),
-                    React.createElement('p', { className: 'text-sm text-gray-400 mt-2' }, 'Secure password management for everyone')
-                )
-            );
-        }
-
-        function PasswordManager() {
+        function App() {
             const [passwords, setPasswords] = useState([]);
             const [newEntry, setNewEntry] = useState({ website: '', username: '', password: '' });
             const [masterPassword, setMasterPassword] = useState('');
@@ -61,24 +35,18 @@
                 }
             };
 
-            const savePasswords = (updatedPasswords) => {
-                setPasswords(updatedPasswords);
-                const encryptedData = encrypt(JSON.stringify(updatedPasswords));
-                localStorage.setItem('encrypted_passwords', encryptedData);
-            };
-
             const unlockVault = () => {
                 if (masterPassword.length < 6) {
                     alert('Master password must be at least 6 characters');
                     return;
                 }
                 setIsUnlocked(true);
-                const storedPasswords = localStorage.getItem("encrypted_passwords");
-                if (storedPasswords) {
+                const stored = localStorage.getItem("encrypted_passwords");
+                if (stored) {
                     try {
-                        const decryptedData = decrypt(storedPasswords);
-                        const parsedPasswords = JSON.parse(decryptedData || '[]');
-                        setPasswords(parsedPasswords);
+                        const decrypted = decrypt(stored);
+                        const parsed = JSON.parse(decrypted || '[]');
+                        setPasswords(parsed);
                     } catch {
                         setPasswords([]);
                     }
@@ -90,120 +58,133 @@
                     alert('All fields are required');
                     return;
                 }
-                const newPassword = { 
+                const newPass = { 
                     ...newEntry, 
-                    id: Date.now().toString(),
-                    createdAt: new Date().toISOString()
+                    id: Date.now().toString()
                 };
-                savePasswords([...passwords, newPassword]);
+                const updated = [...passwords, newPass];
+                setPasswords(updated);
+                const encrypted = encrypt(JSON.stringify(updated));
+                localStorage.setItem('encrypted_passwords', encrypted);
                 setNewEntry({ website: '', username: '', password: '' });
             };
 
             const deletePassword = (id) => {
-                if (confirm('Are you sure you want to delete this password?')) {
-                    const updatedPasswords = passwords.filter(entry => entry.id !== id);
-                    savePasswords(updatedPasswords);
+                if (confirm('Delete this password?')) {
+                    const updated = passwords.filter(p => p.id !== id);
+                    setPasswords(updated);
+                    const encrypted = encrypt(JSON.stringify(updated));
+                    localStorage.setItem('encrypted_passwords', encrypted);
                 }
             };
 
             if (!isUnlocked) {
                 return React.createElement('div', {
-                    className: 'min-h-screen bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-6'
+                    className: 'min-h-screen bg-gradient-to-r from-blue-600 to-purple-800 flex items-center justify-center p-6'
                 }, 
                     React.createElement('div', {
                         className: 'bg-white shadow-xl rounded-lg p-8 max-w-md w-full'
                     },
-                        React.createElement('div', { className: 'text-center mb-6' },
-                            React.createElement('h1', { className: 'text-2xl font-bold text-gray-800 mb-4' }, 'Secure Password Vault'),
-                            React.createElement('p', { className: 'text-gray-600' }, 'Enter your master password to unlock')
-                        ),
-                        React.createElement('div', { className: 'space-y-4' },
-                            React.createElement('input', {
-                                type: 'password',
-                                value: masterPassword,
-                                onChange: (e) => setMasterPassword(e.target.value),
-                                placeholder: 'Master Password',
-                                className: 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500',
-                                onKeyPress: (e) => e.key === 'Enter' && unlockVault()
-                            }),
-                            React.createElement('button', {
-                                onClick: unlockVault,
-                                className: 'w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition'
-                            }, 'Unlock Vault')
-                        )
+                        React.createElement('h1', { className: 'text-2xl font-bold text-center mb-6' }, 'Secure Password Vault'),
+                        React.createElement('input', {
+                            type: 'password',
+                            value: masterPassword,
+                            onChange: (e) => setMasterPassword(e.target.value),
+                            placeholder: 'Master Password',
+                            className: 'w-full p-3 border rounded-lg mb-4',
+                            onKeyPress: (e) => e.key === 'Enter' && unlockVault()
+                        }),
+                        React.createElement('button', {
+                            onClick: unlockVault,
+                            className: 'w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700'
+                        }, 'Unlock Vault')
                     )
                 );
             }
 
             return React.createElement('div', { className: 'min-h-screen flex flex-col' },
-                React.createElement(Navbar),
-                React.createElement('div', {
-                    className: 'flex-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 p-6'
-                },
-                    React.createElement('div', {
-                        className: 'max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6'
-                    },
-                    React.createElement('h1', {
-                        className: 'text-2xl font-bold text-gray-800 mb-6'
-                    }, 'Password Manager'),
-                    
-                    React.createElement('div', { className: 'space-y-4 mb-6' },
-                        React.createElement('input', {
-                            type: 'text',
-                            value: newEntry.website,
-                            onChange: (e) => setNewEntry({...newEntry, website: e.target.value}),
-                            placeholder: 'Website',
-                            className: 'w-full p-2 border border-gray-300 rounded-lg'
-                        }),
-                        React.createElement('input', {
-                            type: 'text',
-                            value: newEntry.username,
-                            onChange: (e) => setNewEntry({...newEntry, username: e.target.value}),
-                            placeholder: 'Username',
-                            className: 'w-full p-2 border border-gray-300 rounded-lg'
-                        }),
-                        React.createElement('input', {
-                            type: 'password',
-                            value: newEntry.password,
-                            onChange: (e) => setNewEntry({...newEntry, password: e.target.value}),
-                            placeholder: 'Password',
-                            className: 'w-full p-2 border border-gray-300 rounded-lg'
-                        }),
-                        React.createElement('button', {
-                            onClick: savePassword,
-                            className: 'bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600'
-                        }, 'Save Password')
-                    ),
-                    
-                    React.createElement('div', {},
-                        React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, 'Stored Passwords'),
-                        passwords.length > 0 ? 
-                            React.createElement('ul', { className: 'space-y-4' },
-                                passwords.map(entry => 
-                                    React.createElement('li', {
-                                        key: entry.id,
-                                        className: 'flex justify-between items-center p-4 bg-gray-50 border rounded-lg'
-                                    },
-                                        React.createElement('div', {},
-                                            React.createElement('p', { className: 'font-medium' }, `Website: ${entry.website}`),
-                                            React.createElement('p', {}, `Username: ${entry.username}`),
-                                            React.createElement('p', {}, `Password: ${entry.password}`)
-                                        ),
-                                        React.createElement('button', {
-                                            onClick: () => deletePassword(entry.id),
-                                            className: 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600'
-                                        }, 'Delete')
-                                    )
-                                )
-                            ) :
-                            React.createElement('p', { className: 'text-gray-600' }, 'No passwords saved yet.')
+                // Navbar
+                React.createElement('nav', { className: 'bg-slate-800 text-white p-4' },
+                    React.createElement('div', { className: 'max-w-6xl mx-auto flex justify-between items-center' },
+                        React.createElement('h1', { className: 'text-xl font-bold' }, 'PassKey Manager'),
+                        React.createElement('div', { className: 'space-x-4' },
+                            React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'Home'),
+                            React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'About')
+                        )
                     )
                 ),
-                React.createElement(Footer)
+                
+                // Main Content
+                React.createElement('div', { className: 'flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 p-6' },
+                    React.createElement('div', { className: 'max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6' },
+                        React.createElement('h1', { className: 'text-2xl font-bold mb-6' }, 'Password Manager'),
+                        
+                        // Form
+                        React.createElement('div', { className: 'space-y-4 mb-6' },
+                            React.createElement('input', {
+                                type: 'text',
+                                value: newEntry.website,
+                                onChange: (e) => setNewEntry({...newEntry, website: e.target.value}),
+                                placeholder: 'Website',
+                                className: 'w-full p-2 border rounded-lg'
+                            }),
+                            React.createElement('input', {
+                                type: 'text',
+                                value: newEntry.username,
+                                onChange: (e) => setNewEntry({...newEntry, username: e.target.value}),
+                                placeholder: 'Username',
+                                className: 'w-full p-2 border rounded-lg'
+                            }),
+                            React.createElement('input', {
+                                type: 'password',
+                                value: newEntry.password,
+                                onChange: (e) => setNewEntry({...newEntry, password: e.target.value}),
+                                placeholder: 'Password',
+                                className: 'w-full p-2 border rounded-lg'
+                            }),
+                            React.createElement('button', {
+                                onClick: savePassword,
+                                className: 'bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600'
+                            }, 'Save Password')
+                        ),
+                        
+                        // Password List
+                        React.createElement('div', {},
+                            React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, 'Stored Passwords'),
+                            passwords.length > 0 ? 
+                                React.createElement('ul', { className: 'space-y-4' },
+                                    passwords.map(entry => 
+                                        React.createElement('li', {
+                                            key: entry.id,
+                                            className: 'flex justify-between items-center p-4 bg-gray-50 border rounded-lg'
+                                        },
+                                            React.createElement('div', {},
+                                                React.createElement('p', { className: 'font-medium' }, `Website: ${entry.website}`),
+                                                React.createElement('p', {}, `Username: ${entry.username}`),
+                                                React.createElement('p', {}, `Password: ${entry.password}`)
+                                            ),
+                                            React.createElement('button', {
+                                                onClick: () => deletePassword(entry.id),
+                                                className: 'bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600'
+                                            }, 'Delete')
+                                        )
+                                    )
+                                ) :
+                                React.createElement('p', { className: 'text-gray-600' }, 'No passwords saved yet.')
+                        )
+                    )
+                ),
+                
+                // Footer
+                React.createElement('footer', { className: 'bg-slate-800 text-white p-4' },
+                    React.createElement('div', { className: 'max-w-6xl mx-auto text-center' },
+                        React.createElement('p', {}, '© 2024 PassKey Manager. All rights reserved.')
+                    )
+                )
             );
         }
 
-        ReactDOM.render(React.createElement(PasswordManager), document.getElementById('root'));
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
 </html>
