@@ -147,7 +147,7 @@ const PasswordManager = () => {
               type="password"
               value={masterPassword}
               onChange={(e) => setMasterPassword(e.target.value)}
-              placeholder="Master Password"
+              placeholder="Enter Password"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               onKeyPress={(e) => e.key === 'Enter' && unlockVault()}
             />
