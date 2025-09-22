@@ -16,6 +16,32 @@
         const { useState, useEffect } = React;
         const SECRET_KEY = 'passkey-secret-2024';
 
+        function Navbar() {
+            return React.createElement('nav', {
+                className: 'bg-slate-800 text-white p-4'
+            },
+                React.createElement('div', { className: 'max-w-6xl mx-auto flex justify-between items-center' },
+                    React.createElement('h1', { className: 'text-xl font-bold' }, 'PassKey Manager'),
+                    React.createElement('div', { className: 'space-x-4' },
+                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'Home'),
+                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'About'),
+                        React.createElement('a', { href: '#', className: 'hover:text-yellow-400' }, 'Contact')
+                    )
+                )
+            );
+        }
+
+        function Footer() {
+            return React.createElement('footer', {
+                className: 'bg-slate-800 text-white p-4 mt-8'
+            },
+                React.createElement('div', { className: 'max-w-6xl mx-auto text-center' },
+                    React.createElement('p', {}, '© 2024 PassKey Manager. All rights reserved.'),
+                    React.createElement('p', { className: 'text-sm text-gray-400 mt-2' }, 'Secure password management for everyone')
+                )
+            );
+        }
+
         function PasswordManager() {
             const [passwords, setPasswords] = useState([]);
             const [newEntry, setNewEntry] = useState({ website: '', username: '', password: '' });
@@ -109,12 +135,14 @@
                 );
             }
 
-            return React.createElement('div', {
-                className: 'min-h-screen bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 p-6'
-            },
+            return React.createElement('div', { className: 'min-h-screen flex flex-col' },
+                React.createElement(Navbar),
                 React.createElement('div', {
-                    className: 'max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6'
+                    className: 'flex-1 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 p-6'
                 },
+                    React.createElement('div', {
+                        className: 'max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6'
+                    },
                     React.createElement('h1', {
                         className: 'text-2xl font-bold text-gray-800 mb-6'
                     }, 'Password Manager'),
@@ -170,7 +198,8 @@
                             ) :
                             React.createElement('p', { className: 'text-gray-600' }, 'No passwords saved yet.')
                     )
-                )
+                ),
+                React.createElement(Footer)
             );
         }
 
