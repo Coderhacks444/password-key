@@ -15,7 +15,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <p className="text-sm">
-          © {new Date().getFullYear()} CoderHacks. All rights reserved.
+          © 2024 CoderHacks. All rights reserved.
         </p>
       </div>
     </footer>

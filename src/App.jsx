@@ -5,8 +5,6 @@ import Manger from './Component/Manger'
 import Footer from './Component/Footer'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
       <Navbar/>

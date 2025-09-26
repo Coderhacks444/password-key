@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { EyeIcon, EyeSlashIcon, PencilSquareIcon, TrashIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
 import CryptoJS from 'crypto-js';
 
-const SECRET_KEY = 'passkey-secret-2024';
+const SECRET_KEY = import.meta.env.VITE_SECRET_KEY || 'default-key-' + Date.now();
 
 const PasswordManager = () => {
   const [passwords, setPasswords] = useState([]);
