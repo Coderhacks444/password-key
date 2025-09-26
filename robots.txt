@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://coderhacks444.github.io/password-key/sitemap.xml
