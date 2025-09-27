@@ -29,15 +29,24 @@ const PasswordManager = () => {
   };
 
   // Load encrypted passwords
-  const getPasswords = () => {
-    const storedPasswords = localStorage.getItem("encrypted_passwords");
-    if (storedPasswords && isUnlocked) {
-      try {
+  const getPasswords = async () => {
+    if (!isUnlocked) return;
+    try {
+      const response = await fetch('/api/data');
+      if (response.ok) {
+        const data = await response.json();
+        const decryptedPasswords = data.map(item => ({
+          ...JSON.parse(decrypt(item.encryptedData)),
+          id: item._id
+        }));
+        setPasswords(decryptedPasswords);
+      }
+    } catch {
+      // Fallback to localStorage
+      const storedPasswords = localStorage.getItem("encrypted_passwords");
+      if (storedPasswords) {
         const decryptedData = decrypt(storedPasswords);
-        const parsedPasswords = JSON.parse(decryptedData || '[]');
-        setPasswords(parsedPasswords);
-      } catch {
-        setPasswords([]);
+        setPasswords(JSON.parse(decryptedData || '[]'));
       }
     }
   };
@@ -49,10 +58,20 @@ const PasswordManager = () => {
   }, [isUnlocked]);
 
   // Save encrypted passwords
-  const savePasswords = (updatedPasswords) => {
+  const savePasswords = async (updatedPasswords) => {
     setPasswords(updatedPasswords);
-    const encryptedData = encrypt(JSON.stringify(updatedPasswords));
-    localStorage.setItem('encrypted_passwords', encryptedData);
+    try {
+      const encryptedData = encrypt(JSON.stringify(updatedPasswords));
+      await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ encryptedData })
+      });
+    } catch {
+      // Fallback to localStorage
+      const encryptedData = encrypt(JSON.stringify(updatedPasswords));
+      localStorage.setItem('encrypted_passwords', encryptedData);
+    }
   };
 
   // Master password verification

@@ -7,8 +7,9 @@ if (!mongoose.connections[0].readyState) {
 }
 
 const DataSchema = new mongoose.Schema({
-  name: String,
-  value: Number
+  encryptedData: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 const DataModel = mongoose.models.Data || mongoose.model('Data', DataSchema);
