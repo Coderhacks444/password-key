@@ -32,24 +32,42 @@ const PasswordManager = () => {
 
   // Load encrypted passwords
   const getPasswords = async () => {
-    if (!isUnlocked) return;
+    if (!isUnlocked || !masterPassword) return;
+    
+    // Try localStorage first (more reliable)
+    const storedPasswords = localStorage.getItem("encrypted_passwords");
+    if (storedPasswords) {
+      try {
+        const decryptedData = decrypt(storedPasswords);
+        if (decryptedData) {
+          const parsedPasswords = JSON.parse(decryptedData);
+          setPasswords(parsedPasswords);
+          return;
+        }
+      } catch (error) {
+        console.log('Error decrypting localStorage data:', error);
+      }
+    }
+    
+    // Try MongoDB as backup
     try {
       const response = await fetch('/api/data');
       if (response.ok) {
         const data = await response.json();
-        const decryptedPasswords = data.map(item => ({
-          ...JSON.parse(decrypt(item.encryptedData)),
-          id: item._id
-        }));
-        setPasswords(decryptedPasswords);
+        if (data.length > 0) {
+          const decryptedPasswords = data.map(item => {
+            try {
+              const decryptedData = decrypt(item.encryptedData);
+              return JSON.parse(decryptedData);
+            } catch {
+              return null;
+            }
+          }).filter(Boolean);
+          setPasswords(decryptedPasswords);
+        }
       }
-    } catch {
-      // Fallback to localStorage
-      const storedPasswords = localStorage.getItem("encrypted_passwords");
-      if (storedPasswords) {
-        const decryptedData = decrypt(storedPasswords);
-        setPasswords(JSON.parse(decryptedData || '[]'));
-      }
+    } catch (error) {
+      console.log('MongoDB fetch failed:', error);
     }
   };
   
@@ -81,17 +99,20 @@ const PasswordManager = () => {
   // Save encrypted passwords
   const savePasswords = async (updatedPasswords) => {
     setPasswords(updatedPasswords);
+    
+    // Always save to localStorage first (primary storage)
+    const encryptedData = encrypt(JSON.stringify(updatedPasswords));
+    localStorage.setItem('encrypted_passwords', encryptedData);
+    
+    // Try to backup to MongoDB
     try {
-      const encryptedData = encrypt(JSON.stringify(updatedPasswords));
       await fetch('/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ encryptedData })
       });
-    } catch {
-      // Fallback to localStorage
-      const encryptedData = encrypt(JSON.stringify(updatedPasswords));
-      localStorage.setItem('encrypted_passwords', encryptedData);
+    } catch (error) {
+      console.log('MongoDB backup failed:', error);
     }
   };
 
