@@ -11,7 +11,9 @@ const PasswordManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [masterPassword, setMasterPassword] = useState('');
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('vault_unlocked') === 'true';
+  });
   const [showPasswords, setShowPasswords] = useState({});
 
   // Encryption functions
@@ -52,10 +54,29 @@ const PasswordManager = () => {
   };
   
   useEffect(() => {
-    if (isUnlocked) {
+    // Restore session if vault was unlocked
+    const vaultUnlocked = sessionStorage.getItem('vault_unlocked');
+    const masterKeyHash = sessionStorage.getItem('master_key_hash');
+    
+    if (vaultUnlocked === 'true' && masterKeyHash) {
+      // Prompt for master password to verify session
+      const enteredPassword = prompt('Enter master password to restore session:');
+      if (enteredPassword && CryptoJS.SHA256(enteredPassword).toString() === masterKeyHash) {
+        setMasterPassword(enteredPassword);
+        setIsUnlocked(true);
+      } else {
+        sessionStorage.removeItem('vault_unlocked');
+        sessionStorage.removeItem('master_key_hash');
+        setIsUnlocked(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isUnlocked && masterPassword) {
       getPasswords();
     }
-  }, [isUnlocked]);
+  }, [isUnlocked, masterPassword]);
 
   // Save encrypted passwords
   const savePasswords = async (updatedPasswords) => {
@@ -81,6 +102,8 @@ const PasswordManager = () => {
       return;
     }
     setIsUnlocked(true);
+    sessionStorage.setItem('vault_unlocked', 'true');
+    sessionStorage.setItem('master_key_hash', CryptoJS.SHA256(masterPassword).toString());
   };
 
   const lockVault = () => {
@@ -88,6 +111,8 @@ const PasswordManager = () => {
     setMasterPassword('');
     setPasswords([]);
     setShowPasswords({});
+    sessionStorage.removeItem('vault_unlocked');
+    sessionStorage.removeItem('master_key_hash');
   };
 
   // Input validation
